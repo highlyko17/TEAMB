@@ -1,0 +1,81 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<link rel="stylesheet" href="sample.css">
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>form</title>
+    <script>
+        function updateFileInfo() {
+            var inputFile = document.querySelector('input[type="file"]');
+            var fileInfoTable = document.querySelector('#fileInfoTable');
+            var fileTypeCell = fileInfoTable.rows[1].cells[1];
+            var fileSizeCell = fileInfoTable.rows[2].cells[1];
+
+            if (inputFile.files.length > 0) {
+                var selectedFile = inputFile.files[0];
+                var fileName = selectedFile.name;
+                var fileExtension = fileName.split('.').pop(); // Get file extension
+                var fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2); 
+
+                fileTypeCell.textContent = fileExtension;
+                fileSizeCell.textContent = fileSizeMB + " MB";
+            } else {
+                fileTypeCell.textContent = "";
+                fileSizeCell.textContent = "";
+            }
+        }
+        document.querySelector('form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+
+            fetch('/upload.do', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // JSON 데이터를 처리하고 웹 페이지에 표시
+                var resultDiv = document.querySelector('#result');
+                resultDiv.style.display = 'block'; // 결과 보이기
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('에러 발생:', error);
+            });
+        });
+    </script>
+</head>
+<body>
+
+<form action="upload.do" method="post" enctype="multipart/form-data">
+    <h3>whisper model</h3>
+    <fieldset>
+        <legend>파일 업로드</legend>
+        <p>파일명 : <input type="file" name="file" onchange="updateFileInfo()"></p>
+        <table id="fileInfoTable" border="1">
+        <tr>
+            <th>&nbsp File &nbsp</th>
+            <th>&nbsp Info &nbsp</th>
+        </tr>
+        <tr>
+            <td>&nbsp Type &nbsp</td>
+            <td id="fileTypeCell"></td>
+        </tr>
+        <tr>
+            <td>&nbsp Size &nbsp</td>
+            <td id="fileSizeCell"></td>
+        </tr>
+   		</table>
+        <p><input type="submit" value="업로드">&nbsp<input type="reset" value="취소"></p>
+    </fieldset>
+</form>
+<br><hr><br>
+
+<div id="result" style="display: none;">
+    <textarea rows="10" cols="50"></textarea>
+</div>
+
+</body>
+</html>
