@@ -50,7 +50,7 @@ public class RestAPIController {
 	
 	@PostMapping("/timestamp.do")
 	@ResponseBody
-	public ResponseEntity<?> extractTimestamp(@RequestParam MultipartFile file, HttpServletRequest request)
+	public ResponseEntity<?> extractTimestamp(@RequestParam MultipartFile file, @RequestParam("searchfor") String searchfor, HttpServletRequest request)
 			throws IOException, InterruptedException {
 		OpenAiService service = new OpenAiService(Keys.OPENAPI_KEY, Duration.ofMinutes(9999));
 		long startTime = System.currentTimeMillis();
@@ -61,6 +61,7 @@ public class RestAPIController {
 		ServletContext context = request.getSession().getServletContext();
 		String projectPath = context.getRealPath("/");
 		String absolutePathString = "";
+		logger.debug("searchfor: " + searchfor);
 		logger.debug("projectPath: " + projectPath);
 
 		/* OS detection */
@@ -296,7 +297,7 @@ public class RestAPIController {
 		
 		List<ChatMessage> message = new ArrayList<ChatMessage>();
 		message.add(new ChatMessage("user",
-				"timestamp 별 내용을 간단히 요약해: \"" + srt_content + "\""));
+				"다음은 srt내용이야. "+searchfor+"을 찾아서 timestamp를 반환해줘. " + srt_content));
 
 		ChatCompletionRequest completionRequest = ChatCompletionRequest.builder().messages(message)
 				.model("gpt-3.5-turbo-16k")
