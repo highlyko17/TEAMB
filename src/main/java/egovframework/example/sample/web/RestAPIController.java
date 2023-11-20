@@ -52,6 +52,7 @@ public class RestAPIController {
 	@ResponseBody
 	public ResponseEntity<?> extractTimestamp(@RequestParam MultipartFile file, HttpServletRequest request)
 			throws IOException, InterruptedException {
+		OpenAiService service = new OpenAiService(Keys.OPENAPI_KEY, Duration.ofMinutes(9999));
 		long startTime = System.currentTimeMillis();
 		HttpHeaders headers = new HttpHeaders();
 		headers.add(HttpHeaders.CONTENT_TYPE, "text/plain;charset=UTF-8");
@@ -129,7 +130,7 @@ public class RestAPIController {
 		Path extractedAbsolutePath = directoryPath.toAbsolutePath();
 		String extractedAbsolutePathString = new String(absolutePathString);
 		/* ffmpeg */
-		if (file_size > 0/*26214400*/) {
+		if (file_size > 26214400) {
 			if (osName.toLowerCase().contains("windows")) {
 				extractedAbsolutePathString = extractedAbsolutePath.toString() + "\\" + nameWithoutExtension + ".mp3";
 
@@ -215,7 +216,7 @@ public class RestAPIController {
 		}
 		/*local whisper*/
 		//extractedAbsolutePathString
-		String whisperCommand = "export PATH="+ffmpeg_dir_addr+":$PATH;"+whisper_addr +" "+"--output_dir "+srt_dir_address+" "+absolutePathString;
+		String whisperCommand = "export PATH="+ffmpeg_dir_addr+":$PATH;"+whisper_addr +" "+"--output_dir "+srt_dir_address+" "+"--output_format srt "+absolutePathString;
 	
 		logger.debug("whisperCommand: " + whisperCommand);
 		
@@ -279,31 +280,36 @@ public class RestAPIController {
 		logger.debug("Whisper process exited with code: " + exitCode);
 		String srt_address = srt_dir_address+"/"+nameWithoutExtension+".srt";
 		logger.debug("srt file address: " + srt_address);
-		file_size = extractedAudio.length();
+		Path srt_path = Paths.get(srt_address);
+        byte[] srt_fileBytes = Files.readAllBytes(srt_path);
+        String srt_content = new String(srt_fileBytes);
+        logger.debug("srt_content:\n " + srt_content);
+		//file_size = extractedAudio.length();
 		
-		/*
+		
+		long endTime = System.currentTimeMillis();
+		long executionTime = endTime - startTime;
+		response.put("executionTimeInMilli", Long.toString(executionTime));
+		logger.info("Execution time:"+executionTime);
+		response.put("srt_conent", srt_content);
+		
+		
 		List<ChatMessage> message = new ArrayList<ChatMessage>();
 		message.add(new ChatMessage("user",
-				"다음 텍스트의 주제를 파악해서 텍스트의 언어로 700token 이하로 요약해줘: \"" + transcription_result + "\""));
+				"timestamp 별 내용을 간단히 요약해: \"" + srt_content + "\""));
 
 		ChatCompletionRequest completionRequest = ChatCompletionRequest.builder().messages(message)
 				.model("gpt-3.5-turbo-16k")
 
 				.maxTokens(700).temperature((double) 0.5f).build();
-		String summary_result = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage()
+				String summary_result = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage()
 				.getContent();
 
 		response.put("isSuccess", "true");
 		response.put("finalFileSize", Long.toString(file_size) + " bytes");
 		response.put("summary_result", summary_result);
 		logger.debug(summary_result);
-		*/
-		long endTime = System.currentTimeMillis();
-		long executionTime = endTime - startTime;
-		response.put("executionTimeInMilli", Long.toString(executionTime));
-		logger.info("Execution time:"+executionTime);
 		
-		String responseStr = response.toString();
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonResponse = objectMapper.writeValueAsString(response);
@@ -334,14 +340,12 @@ public class RestAPIController {
 			logger.debug("OS detection: Windows OS");
 			ffmpeg_address = projectPath + "resources\\win\\ffmpeg.exe";
 			ffmpeg_dir_addr =projectPath + "resources\\win";
-			//whisper_intall_addr = projectPath +"resources\\whisper";
 
 		} else if (osName.toLowerCase().contains("mac")) {
 			logger.debug("OS detection: Mac OS");
 			ffmpeg_address = projectPath + "resources/mac/ffmpeg";
 			ffmpeg_dir_addr =projectPath + "resources/mac";
 			whisper_addr = projectPath + "resources/mac/whisper/bin/whisper";
-			//whisper_intall_addr = projectPath +"resources/whisper";
 		} else {
 			logger.debug("OS detection: Unknown OS");
 		}
@@ -350,7 +354,6 @@ public class RestAPIController {
 
 		File ffmpeg_file = new File(ffmpeg_address);
 		assert ffmpeg_file.exists() : "파일이 존재하지 않습니다.";
-		// String ffmpeg_absolutePath = ffmpeg_file.getAbsolutePath();
 		logger.debug("location of ffmpeg: " + ffmpeg_address);
 		
 		long file_size = file.getSize();
@@ -390,7 +393,7 @@ public class RestAPIController {
 		File extractedAudio = null;
 			
 		/* ffmpeg */
-		if (file_size > 0/*26214400*/) {
+		if (file_size > 26214400) {
 			Path extractedAbsolutePath = directoryPath.toAbsolutePath();
 			String extractedAbsolutePathString = "";
 			if (osName.toLowerCase().contains("windows")) {
@@ -414,9 +417,8 @@ public class RestAPIController {
 				String[] cmdArray = ffmpegCommand.split(" ");
 				processBuilder.command(cmdArray);
 			} else if (osName.toLowerCase().contains("mac")) {
-				//processBuilder.command("bash", "-c", ffmpegCommand);
-				//String cococo = "export PATH="+ffmpeg_dir_addr+":$PATH;"+ whisperCommand;
-				processBuilder.command("bash", "-c", "export PATH="+ffmpeg_dir_addr+":$PATH;"+ whisperCommand);
+				processBuilder.command("bash", "-c", ffmpegCommand);
+				
 			}
 
 			logger.debug("processBuilder.start()");
@@ -521,8 +523,6 @@ public class RestAPIController {
 		long executionTime = endTime - startTime;
 		response.put("executionTimeInMilli", Long.toString(executionTime));
 		logger.info("Execution time:"+executionTime);
-		
-		String responseStr = response.toString();
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonResponse = objectMapper.writeValueAsString(response);
@@ -734,8 +734,6 @@ public class RestAPIController {
 		response.put("executionTimeInMilli", Long.toString(executionTime));
 		logger.info("Execution time:"+executionTime);
 		
-		String responseStr = response.toString();
-
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonResponse = objectMapper.writeValueAsString(response);
 
