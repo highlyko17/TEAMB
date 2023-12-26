@@ -67,6 +67,9 @@ public class RestAPIController {
 		String absolutePathString = "";
 		logger.debug("searchfor: " + searchfor);
 		logger.debug("projectPath: " + projectPath);
+		if(lang!=null) {
+			logger.debug("lang: " + lang);
+		}
 
 		/* OS detection */
 		String osName = System.getProperty("os.name");
@@ -221,16 +224,34 @@ public class RestAPIController {
 		/*local whisper*/
 		//extractedAbsolutePathString
 		/*Lang */
-		String whisperCommand = 
-				"export PATH="+
-						ffmpeg_dir_addr+
-						":$PATH;"+whisper_addr+
-						" "+
-						"--output_dir "+
-						srt_dir_address+
-						" "+
-						"--output_format srt "+
-						absolutePathString;
+		String whisperCommand ="";
+		if(lang==null) {
+			whisperCommand = 
+					"export PATH="+
+							ffmpeg_dir_addr+
+							":$PATH;"+whisper_addr+
+							" "+
+							"--output_dir "+
+							srt_dir_address+
+							" "+
+							"--output_format srt "+
+							absolutePathString;
+		}
+		else {
+			whisperCommand = 
+					"export PATH="+
+							ffmpeg_dir_addr+
+							":$PATH;"+whisper_addr+
+							" "+
+							"--output_dir "+
+							srt_dir_address+
+							" "+
+							"--output_format srt "+
+							"--language "+
+							lang+" "+
+							absolutePathString;
+		}
+		
 	
 		logger.debug("whisperCommand: " + whisperCommand);
 		
