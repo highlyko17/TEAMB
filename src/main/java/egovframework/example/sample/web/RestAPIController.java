@@ -50,7 +50,11 @@ public class RestAPIController {
 	
 	@PostMapping("/timestamp.do")
 	@ResponseBody
-	public ResponseEntity<?> extractTimestamp(@RequestParam MultipartFile file, @RequestParam("searchfor") String searchfor, HttpServletRequest request)
+	public ResponseEntity<?> extractTimestamp(
+			@RequestParam MultipartFile file, 
+			@RequestParam("searchfor") String searchfor, 
+			@RequestParam(name = "lang", required = false) String lang,//input으로 언어 받 
+			HttpServletRequest request)
 			throws IOException, InterruptedException {
 		OpenAiService service = new OpenAiService(Keys.OPENAPI_KEY, Duration.ofMinutes(9999));
 		long startTime = System.currentTimeMillis();
@@ -93,7 +97,7 @@ public class RestAPIController {
 		assert ffmpeg_file.exists() : "파일이 존재하지 않습니다.";
 		logger.debug("location of ffmpeg: " + ffmpeg_address);
 		
-		long file_size = file.getSize();
+		long file_size = file.getSize();//들어온 파
 		response.put("initialFileSize: ", Long.toString(file_size)+" bytes");
 		logger.debug("Size of the file: " + file_size + " bytes");
 		response.put("isAudioExtracted", "false");
@@ -114,7 +118,6 @@ public class RestAPIController {
 		String filename = file.getOriginalFilename();
 		int lastIndex = filename.lastIndexOf(".");
 		if (lastIndex >= 0) {
-			// 확장자를 포함하여 파일 이름을 가져옵니다.
 			nameWithoutExtension = filename.substring(0, lastIndex);
 			logger.debug("Filename without extension: " + nameWithoutExtension);
 		} else {
@@ -207,7 +210,7 @@ public class RestAPIController {
 
 			extractedAudio = new File(extractedAbsolutePathString);
 
-			absolutePathString = extractedAbsolutePathString;
+			absolutePathString = extractedAbsolutePathString;//삭제할 파
 			logger.debug("Extracted audio file size: " + extractedAudio.length() + " bytes");
 			file_size = extractedAudio.length();
 			if (extractedAudio.length() > 26214400) {
@@ -217,7 +220,17 @@ public class RestAPIController {
 		}
 		/*local whisper*/
 		//extractedAbsolutePathString
-		String whisperCommand = "export PATH="+ffmpeg_dir_addr+":$PATH;"+whisper_addr +" "+"--output_dir "+srt_dir_address+" "+"--output_format srt "+absolutePathString;
+		/*Lang */
+		String whisperCommand = 
+				"export PATH="+
+						ffmpeg_dir_addr+
+						":$PATH;"+whisper_addr+
+						" "+
+						"--output_dir "+
+						srt_dir_address+
+						" "+
+						"--output_format srt "+
+						absolutePathString;
 	
 		logger.debug("whisperCommand: " + whisperCommand);
 		
@@ -281,7 +294,7 @@ public class RestAPIController {
 		logger.debug("Whisper process exited with code: " + exitCode);
 		String srt_address = srt_dir_address+"/"+nameWithoutExtension+".srt";
 		logger.debug("srt file address: " + srt_address);
-		Path srt_path = Paths.get(srt_address);
+		Path srt_path = Paths.get(srt_address);// 삭제할 파
         byte[] srt_fileBytes = Files.readAllBytes(srt_path);
         String srt_content = new String(srt_fileBytes);
         logger.debug("srt_content:\n " + srt_content);
@@ -297,7 +310,7 @@ public class RestAPIController {
 		
 		List<ChatMessage> message = new ArrayList<ChatMessage>();
 		message.add(new ChatMessage("user",
-				"다음은 srt내용이야. "+searchfor+"을 찾아서 timestamp를 반환해줘. " + srt_content));
+				"다음은 srt내용이야. "+searchfor+"가 시작되는 timestamp를 반환해줘. " + srt_content));
 
 		ChatCompletionRequest completionRequest = ChatCompletionRequest.builder().messages(message)
 				.model("gpt-3.5-turbo-16k")
@@ -314,10 +327,42 @@ public class RestAPIController {
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonResponse = objectMapper.writeValueAsString(response);
+		/*
+		삭제할 파일
+			1. 사용자에게 받은 원본 파일
+			2. mp3 전환 파일
+			3. srt 파일 
+		 */
+		File fileToDelete = new File(origin_absolutePathString);//사용자에게 받은 원본 파일
 
+		if (fileToDelete.exists()) {
+			if (fileToDelete.delete()) {
+				logger.debug("origin video file deleted successfully.");
+			} else {
+				logger.debug("Failed to delete the origin video file.");
+			}
+		} else {
+			logger.debug("temporary file not found.");
+		}
+		
+		if (extractedAudio != null) {//mp3 전환 
+			extractedAudio.delete();
+			logger.debug("Extracted audio file deleted successfully.");
+		}
+		File srtToDelete = new File(srt_address);
+		if (srtToDelete.exists()) {
+			if (srtToDelete.delete()) {
+				logger.debug("srtToDelete deleted successfully.");
+			} else {
+				logger.debug("Failed to delete the srtToDelete.");
+			}
+		} else {
+			logger.debug("srtToDelete file not found.");
+		}
+		
 		return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
 	}
-	@PostMapping("/upload.do")
+	@PostMapping("summarize_vid.do")
 	@ResponseBody
 	public ResponseEntity<?> summaryUsingWhisper(@RequestParam MultipartFile file, HttpServletRequest request)
 			throws IOException, InterruptedException {
