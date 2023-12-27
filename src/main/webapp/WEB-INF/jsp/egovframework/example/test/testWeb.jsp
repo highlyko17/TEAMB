@@ -49,7 +49,7 @@
 </head>
 <body>
 
-<form action="upload.do" method="post" enctype="multipart/form-data">
+<form action="summarize_vid.do" method="post" enctype="multipart/form-data">
     <h3>whisper model</h3>
     <fieldset>
         <legend>파일 업로드</legend>
