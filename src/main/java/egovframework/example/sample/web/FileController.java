@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,7 @@ public class FileController {
 	private String absolutePathString;
 	private OSDetect osd;
 	private String nameWithoutExtension;
+	private File extractedAudio;
 	
 	public Path getDirectoryPath() {
 		return directoryPath;
@@ -120,7 +122,9 @@ public class FileController {
 		return absolutePathString;
 	}
 	
-	public void runFfmpeg() {
+	public File runFfmpeg(File ea) throws InterruptedException, IOException {
+		extractedAudio = ea;
+		
 		if (file_size > 26214400) {
 			Path extractedAbsolutePath = directoryPath.toAbsolutePath();
 			String extractedAbsolutePathString = "";
@@ -135,7 +139,7 @@ public class FileController {
 			String ffmpegCommand = osd.getFfmpeg_address() + " -i " + absolutePathString + " -vn -acodec libmp3lame "
 					+ extractedAbsolutePathString;
 			logger.debug("ffmpegCommand: " + ffmpegCommand);
-			String whisperCommand = osd.getWhisper_addr() +" "+absolutePathString;
+			String whisperCommand = osd.getWhisper_addr() +" "+ absolutePathString;
 			logger.debug("whisperCommand: " + whisperCommand);
 			
 			
@@ -198,14 +202,30 @@ public class FileController {
 			logger.debug("Extract process exited with code: " + exitCode);
 
 			extractedAudio = new File(extractedAbsolutePathString);
+			file_size = extractedAudio.length();
 
 			absolutePathString = extractedAbsolutePathString;
 			logger.debug("Extracted audio file size: " + extractedAudio.length() + " bytes");
-			file_size = extractedAudio.length();
-			if (extractedAudio.length() > 26214400) {
-				return new ResponseEntity<>("오디오만 추출했음에도 파일의 크기가 26214400bytes를 초과합니다. 파일을 분할하여 주세요.", headers,
-						HttpStatus.OK);
+		}
+		
+		return extractedAudio;
+	}
+	
+	public void deleteFile(String origin_absolutePathString) {
+		if (extractedAudio != null) {
+			extractedAudio.delete();
+			logger.debug("Extracted audio file deleted successfully.");
+		}
+		File fileToDelete = new File(origin_absolutePathString);
+
+		if (fileToDelete.exists()) {
+			if (fileToDelete.delete()) {
+				logger.debug("Temporary video file deleted successfully.");
+			} else {
+				logger.debug("Failed to delete the temporary video file.");
 			}
+		} else {
+			logger.debug("temporary file not found.");
 		}
 	}
 }
