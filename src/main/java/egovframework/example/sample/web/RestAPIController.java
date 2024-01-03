@@ -49,18 +49,14 @@ public class RestAPIController {
 	}
 	
 	private static String getPythonPath() throws IOException {
-        // Execute the 'where python' command
         ProcessBuilder whereProcessBuilder = new ProcessBuilder("which", "python");
         Process whereProcess = whereProcessBuilder.start();
 
-        // Read the output of the command
         String whereOutput = new String(whereProcess.getInputStream().readAllBytes()).trim();
 
-        // Split the output into lines
         String[] lines = whereOutput.split(System.lineSeparator());
 
         if (lines.length > 0) {
-            // Use the first line as the Python path
             return lines[0];
         }
 
@@ -246,23 +242,16 @@ public class RestAPIController {
 		
 		//////////////////
 		try {
-            // Get the path to Python using the 'where' command
             String pythonPath = getPythonPath();
 
             if (pythonPath == null) {
                 System.err.println("Error: Python not found.");
             }
 
-            // Path to the script file
-            //String filePath = "/Users/Hyeli/Desktop/egov/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/Whisper/resources/mac/whisper/bin/whisper";
-
-            // Build the command
             ProcessBuilder processBuilder = new ProcessBuilder("sed", "-i", "", "1s|^#!/Users/jiuhyeong/opt/anaconda3/bin/python|#!/bin/bash " + pythonPath + "|", whisper_addr);
 
-            // Start the process
             Process process = processBuilder.start();
 
-            // Wait for the process to complete
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
