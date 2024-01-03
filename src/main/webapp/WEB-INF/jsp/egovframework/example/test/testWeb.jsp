@@ -26,11 +26,36 @@
                 fileSizeCell.textContent = "";
             }
         }
+        function submitTimestampForm() {
+            var searchforInput = document.getElementById('searchforInput');
+            var form = document.getElementById('uploadForm');
+
+            form.elements['searchfor'].value = searchforInput.value;
+
+            form.action = 'timestamp.do';
+
+            form.submit();
+        }
         document.querySelector('form').addEventListener('submit', function (e) {
             e.preventDefault();
             var formData = new FormData(this);
+            
+            var buttonClicked = document.activeElement.value;
 
-            fetch('/upload.do', {
+            var endpoint;
+            if (buttonClicked === '타임스탬프 추출') {
+                var searchQuery = prompt("Enter search query for timestamp extraction:");
+                formData.append('searchfor', searchQuery);
+                endpoint = '/timestamp.do';
+            } else if (buttonClicked === '요약') {
+                endpoint = '/summarize_vid.do';
+            } else if (buttonClicked === '태그 추출') {
+                endpoint = '/extract-tag.do';
+            } else {
+                console.error('Unknown button clicked:', buttonClicked);
+                return;
+            }
+            fetch(endpoint, {
                 method: 'POST',
                 body: formData
             })
@@ -49,7 +74,7 @@
 </head>
 <body>
 
-<form action="summarize_vid.do" method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data">
     <h3>whisper model</h3>
     <fieldset>
         <legend>파일 업로드</legend>
@@ -68,7 +93,15 @@
             <td id="fileSizeCell"></td>
         </tr>
    		</table>
-        <p><input type="submit" value="업로드">&nbsp<input type="reset" value="취소"></p>
+        <p>
+        	<input type="submit" value="요약" onclick="javascript: form.action='summarize_vid.do'">
+        	&nbsp<input type="submit" value="태그 추출" onclick="javascript: form.action='extract-tag.do'">
+        </p>
+        <p>
+            검색 내용 : <input type="text" name="searchfor" id="searchforInput">
+            <input type="button" value="타임스탬프 추출" onclick="submitTimestampForm()">
+        </p>
+        <p><input type="reset" value="취소"></p>
     </fieldset>
 </form>
 <br><hr><br>
