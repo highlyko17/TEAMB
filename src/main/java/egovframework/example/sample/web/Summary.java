@@ -76,6 +76,11 @@ public class Summary {
 		}
 		
 		WhisperController wc = new WhisperController();
+		
+		if(extractedAudio!=null) {
+			String extractedAudiFilePath = extractedAudio.getAbsolutePath();
+			absolutePathString = extractedAudiFilePath;
+		}
 		wc.transcript(absolutePathString);
 		
 		fc.deleteFile(origin_absolutePathString);
