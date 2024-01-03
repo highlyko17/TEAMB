@@ -49,19 +49,18 @@ public class RestAPIController {
 	}
 	
 	private static String getPythonPath() throws IOException {
-        ProcessBuilder whereProcessBuilder = new ProcessBuilder("which", "python");
-        Process whereProcess = whereProcessBuilder.start();
+	    ProcessBuilder whereProcessBuilder = new ProcessBuilder("which", "python");
+	    Process whereProcess = whereProcessBuilder.start();
 
-        String whereOutput = new String(whereProcess.getInputStream().readAllBytes()).trim();
+	    try (BufferedReader reader = new BufferedReader(new InputStreamReader(whereProcess.getInputStream()))) {
+	        String line;
+	        if ((line = reader.readLine()) != null) {
+	            return line.trim();
+	        }
+	    }
 
-        String[] lines = whereOutput.split(System.lineSeparator());
-
-        if (lines.length > 0) {
-            return lines[0];
-        }
-
-        return null;
-    }
+	    return null;
+	}
 	
 	@PostMapping("/timestamp.do")
 	@ResponseBody
