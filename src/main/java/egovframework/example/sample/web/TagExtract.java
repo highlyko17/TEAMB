@@ -78,6 +78,10 @@ public class TagExtract {
 
 		// 받아온 주소를 whisper에게 보내
 		WhisperController wc = new WhisperController();
+		if(extractedAudio!=null) {
+			String extractedAudiFilePath = extractedAudio.getAbsolutePath();
+			absolutePathString = extractedAudiFilePath;
+		}
 		wc.transcript(absolutePathString);
 
 		fc.deleteFile(origin_absolutePathString);
