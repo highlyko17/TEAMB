@@ -244,8 +244,7 @@ public class TimestampController {
 			         whisperCommand = 
 			               "export PATH="+
 			                     ffmpeg_dir_addr+
-			                     ":$PATH;"+
-			                     "export PATH="+
+			                     ":"+
 			                     whispEnVarDir+
 			                     ":$PATH;"+
 			                     whisper_addr+
@@ -261,8 +260,7 @@ public class TimestampController {
 			         whisperCommand = 
 			               "export PATH="+
 			                     ffmpeg_dir_addr+
-			                     ":$PATH;"+
-			                     "export PATH="+
+			                     ":"+
 			                     whispEnVarDir+
 			                     ":$PATH;"+
 			                     whisper_addr+
