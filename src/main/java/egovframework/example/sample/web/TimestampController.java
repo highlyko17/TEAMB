@@ -237,7 +237,7 @@ public class TimestampController {
 	                      
 	      }
 	      else {//mac
-	    	  String whispEnVarDir =projectPath+"resources/mac/whisper/bin";
+	    	  String whispEnVarDir =projectPath+"resources/mac/whisper/bin/whisper";
 	    	  if(lang==null) {
 	    		  
 	    		  	
