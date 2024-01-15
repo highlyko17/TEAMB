@@ -2,9 +2,12 @@ package egovframework.example.sample.web;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,7 +49,8 @@ public class TimestampController {
 	   public ResponseEntity<?> extractTimestamp(
 	         @RequestParam MultipartFile file, 
 	         @RequestParam("searchfor") String searchfor, 
-	         @RequestParam(name = "lang", required = false) String lang,//input으로 언어 받ㄱ 
+	         @RequestParam(name = "lang", required = false) String lang,
+	         @RequestParam(name = "locOfPython", required = false) String locOfPython,
 	         HttpServletRequest request)
 	         throws IOException, InterruptedException {
 	      OpenAiService service = new OpenAiService(Keys.OPENAPI_KEY, Duration.ofMinutes(9999));
@@ -215,7 +219,74 @@ public class TimestampController {
 	                  HttpStatus.OK);
 	         }
 	      }
+	      
+	      	//python 위치
+			ProcessBuilder pyProcessBuilder = new ProcessBuilder();
+			pyProcessBuilder.command("bash", "-c", "which python3");
+			String replaceTargetString;
+			if(locOfPython==null) {
+				Process process = pyProcessBuilder.start();
+				logger.debug("pyProcessBuilder.start()");
 
+				StringBuilder python3_loc = new StringBuilder();
+
+				Thread outputThread = new Thread(() -> {
+					try {
+						InputStream inputStream = process.getInputStream();
+						InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+						BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+						String python3_loc_line;
+						python3_loc_line = bufferedReader.readLine();
+						python3_loc.append(python3_loc_line);
+
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+
+				outputThread.start();
+
+				int exitCode;
+				try {
+					exitCode = process.waitFor();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					exitCode = -1;
+				}
+
+				outputThread.join();
+				logger.debug("python3_loc:" + python3_loc);
+				logger.debug("Extract process exited with code: " + exitCode);
+				replaceTargetString = "#!" + python3_loc;
+			}else {
+				replaceTargetString = locOfPython;
+			}
+
+
+			StringBuilder content = new StringBuilder();
+
+			try (BufferedReader reader = new BufferedReader(new FileReader(whisper_addr))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					content.append(line).append("\n");
+				}
+				logger.debug("Origin whisper content:\n" + content);
+				if (content.length() > 0) {
+					String firstLine = content.toString().split("\n")[0];
+					content.replace(0, firstLine.length(), replaceTargetString);
+				}
+				logger.debug("Modified whisper content:\n" + content);
+				
+				// 변경된 내용을 다시 파일에 쓰기
+				try (PrintWriter writer = new PrintWriter(new FileWriter(whisper_addr))) {
+					writer.print(content);
+				} catch (IOException e) {
+					logger.error("Error writing to the 'whisper' file.", e);
+				}
+			} catch (IOException e) {
+				logger.error("No whisper", e);
+			}
 	      String whisperCommand ="";
 	      
 	      

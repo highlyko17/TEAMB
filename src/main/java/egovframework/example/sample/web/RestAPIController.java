@@ -132,7 +132,7 @@ public class RestAPIController {
 				content.replace(0, firstLine.length(), replaceTargetString);
 			}
 			logger.debug("Modified whisper content:\n" + content);
-
+			
 			// 변경된 내용을 다시 파일에 쓰기
 			try (PrintWriter writer = new PrintWriter(new FileWriter(whisper_addr))) {
 				writer.print(content);
