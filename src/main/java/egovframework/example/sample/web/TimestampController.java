@@ -237,14 +237,18 @@ public class TimestampController {
 	                      
 	      }
 	      else {//mac
-	    	  String whispEnVarDir =projectPath+"resources/mac/whisper/bin/whisper";
+    		  String whispEnVarDir =projectPath+"resources/mac/whisper/bin";
+
 	    	  if(lang==null) {
-	    		  
 	    		  	
 			         whisperCommand = 
 			               "export PATH="+
 			                     ffmpeg_dir_addr+
-			                     ":$PATH;"+whispEnVarDir+
+			                     ":$PATH;"+
+			                     "export PATH="+
+			                     whispEnVarDir+
+			                     ":$PATH;"+
+			                     whisper_addr+
 			                     " "+
 			                     "--output_dir "+
 			                     srt_dir_address+
@@ -257,7 +261,11 @@ public class TimestampController {
 			         whisperCommand = 
 			               "export PATH="+
 			                     ffmpeg_dir_addr+
-			                     ":$PATH;"+whispEnVarDir+
+			                     ":$PATH;"+
+			                     "export PATH="+
+			                     whispEnVarDir+
+			                     ":$PATH;"+
+			                     whisper_addr+
 			                     " "+
 			                     "--output_dir "+
 			                     srt_dir_address+
