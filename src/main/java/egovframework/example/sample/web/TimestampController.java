@@ -218,35 +218,8 @@ public class TimestampController {
 
 	      String whisperCommand ="";
 	      
-	      if(lang==null) {
-	         whisperCommand = 
-	               "export PATH="+
-	                     ffmpeg_dir_addr+
-	                     ":$PATH;"+whisper_addr+
-	                     " "+
-	                     "--output_dir "+
-	                     srt_dir_address+
-	                     " "+
-	                     "--output_format srt "+
-	                     "--model tiny "+
-	                     absolutePathString;
-	      }
-	      else {
-	         whisperCommand = 
-	               "export PATH="+
-	                     ffmpeg_dir_addr+
-	                     ":$PATH;"+whisper_addr+
-	                     " "+
-	                     "--output_dir "+
-	                     srt_dir_address+
-	                     " "+
-	                     "--output_format srt "+
-	                     "--language "+
-	                     lang+" "+
-	                     "--model tiny "+
-	                     absolutePathString;
-	      }
-	      if (osName.toLowerCase().contains("windows")) {
+	      
+	      if (osName.toLowerCase().contains("windows")) {//win
 	         if(lang==null) {
 	            String whispEnVarDir =projectPath+"resources\\win\\whisper\\";
 	            String ffmpegEnVarDir =projectPath+"resources\\win\\ffmpeg-master-latest-win64-gpl\\bin\\";
@@ -263,6 +236,40 @@ public class TimestampController {
 	         }
 	                      
 	      }
+	      else {//mac
+	    	  String whispEnVarDir =projectPath+"resources/mac/whisper/bin";
+	    	  if(lang==null) {
+	    		  
+	    		  	
+			         whisperCommand = 
+			               "export PATH="+
+			                     ffmpeg_dir_addr+
+			                     ":$PATH;"+whispEnVarDir+
+			                     " "+
+			                     "--output_dir "+
+			                     srt_dir_address+
+			                     " "+
+			                     "--output_format srt "+
+			                     "--model tiny "+
+			                     absolutePathString;
+			      }
+			      else {
+			         whisperCommand = 
+			               "export PATH="+
+			                     ffmpeg_dir_addr+
+			                     ":$PATH;"+whispEnVarDir+
+			                     " "+
+			                     "--output_dir "+
+			                     srt_dir_address+
+			                     " "+
+			                     "--output_format srt "+
+			                     "--language "+
+			                     lang+" "+
+			                     "--model tiny "+
+			                     absolutePathString;
+			      }
+	      }
+	      
 	   
 	      logger.debug("whisperCommand: " + whisperCommand);
 	      

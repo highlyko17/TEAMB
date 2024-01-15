@@ -125,7 +125,9 @@ public class RestAPIController {
 	           while ((line = reader.readLine()) != null) {
 	                content.append(line).append("\n");
 	           }
-	      }
+	      }catch (IOException e) {
+	            logger.error("No whisper", e);
+	        }
 	      logger.debug("content:\n" + content);
 	      long endTime = System.currentTimeMillis();
 	      long executionTime = endTime - startTime;
