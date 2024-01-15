@@ -14,6 +14,9 @@
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
     </context:component-scan>
+    <mvc:annotation-driven>
+        <mvc:async-support default-timeout="60000" />
+    </mvc:annotation-driven>
     <!-- 한글 return을 위해,.. -->
     <bean class="org.springframework.web.filter.CharacterEncodingFilter">
     	<property name="encoding" value="UTF-8" />
