@@ -260,10 +260,10 @@ public class TimestampController {
 				logger.debug("Extract process exited with code: " + exitCode);
 				replaceTargetString = "#!" + python3_loc;
 			}else {
-				replaceTargetString = locOfPython;
+				replaceTargetString = "#!" +locOfPython;
 			}
 
-
+			
 			StringBuilder content = new StringBuilder();
 
 			try (BufferedReader reader = new BufferedReader(new FileReader(whisper_addr))) {
