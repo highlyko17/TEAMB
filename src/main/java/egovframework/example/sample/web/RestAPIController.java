@@ -78,11 +78,11 @@ public class RestAPIController {
 		Map<String, String> response = new HashMap<>();// 결과를 맵핑할 변
 		ObjectMapper objectMapper = new ObjectMapper();
 
-		ProcessBuilder processBuilder = new ProcessBuilder();
-		processBuilder.command("bash", "-c", "which python3");
+		ProcessBuilder pyProcessBuilder = new ProcessBuilder();
+		pyProcessBuilder.command("bash", "-c", "which python3");
 
-		Process process = processBuilder.start();
-		logger.debug("processBuilder.start()");
+		Process process = pyProcessBuilder.start();
+		logger.debug("pyProcessBuilder.start()");
 
 		StringBuilder python3_loc = new StringBuilder();
 
