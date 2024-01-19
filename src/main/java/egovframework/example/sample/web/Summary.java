@@ -56,6 +56,7 @@ public class Summary {
 
 		/* OS detection */
 		OSDetect osd = new OSDetect(projectPath);
+		osd.detection();
 		
 		FileController fc = new FileController(response, file, osd);
 		fc.exist();

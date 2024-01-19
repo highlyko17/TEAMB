@@ -69,158 +69,28 @@ public class TimestampController {
          }
 
          /* OS detection */
-         String osName = System.getProperty("os.name");
-         String ffmpeg_address = "";
-         String ffmpeg_dir_addr = "";
-         String whisper_addr = "";
-         String srt_dir_address ="";
+         OSDetect osd = new OSDetect(projectPath);
+         osd.whisperDetection();
          
-         if (osName.toLowerCase().contains("windows")) {
-            logger.debug("OS detection: Windows OS");
-            ffmpeg_address = projectPath + "resources\\win\\ffmpeg.exe";
-            ffmpeg_dir_addr =projectPath + "resources\\win";
-            whisper_addr = projectPath + "resources\\win\\whisper\\bin\\whisper.exe";
-            srt_dir_address = projectPath + "resources\\temp";
-            
-         } else if (osName.toLowerCase().contains("mac")) { 
-            logger.debug("OS detection: Mac OS");
-            ffmpeg_address = projectPath + "resources/mac/ffmpeg";
-            ffmpeg_dir_addr =projectPath + "resources/mac";
-            whisper_addr = projectPath + "resources/mac/whisper/bin/whisper";
-            srt_dir_address = projectPath + "resources/temp";
-         } else {
-            logger.debug("OS detection: Unknown OS");
-         }
-         
-         logger.debug("whisper_addr: " + whisper_addr);
-
-         File ffmpeg_file = new File(ffmpeg_address);
-         assert ffmpeg_file.exists() : "파일이 존재하지 않습니다.";
-         logger.debug("location of ffmpeg: " + ffmpeg_address);
-         
-         long file_size = file.getSize();//들어온 파
-         response.put("initialFileSize: ", Long.toString(file_size)+" bytes");
-         logger.debug("Size of the file: " + file_size + " bytes");
-         response.put("isAudioExtracted", "false");
-
-         if (file_size > 26214400) {
-            response.put("isAudioExtracted", "true");
-         }
+         FileController fc = new FileController(response, file, osd);
+         fc.exist();
+         response = fc.sizing();
+ 		
          logger.debug("Project Path: " + projectPath);
 
-         byte[] bytes = file.getBytes();
-         Path directoryPath = Paths.get(projectPath);
-
-         // 디렉토리가 존재하지 않으면 생성
-         if (!Files.exists(directoryPath)) {
-            Files.createDirectories(directoryPath);
-         }
-         String nameWithoutExtension = "";
-         String filename = file.getOriginalFilename();
-         int lastIndex = filename.lastIndexOf(".");
-         if (lastIndex >= 0) {
-            nameWithoutExtension = filename.substring(0, lastIndex);
-            logger.debug("Filename without extension: " + nameWithoutExtension);
-         } else {
-            logger.debug("File doesn't have an extension.");
-         }
-         logger.debug("File name: " + nameWithoutExtension);
-         Path filePath = directoryPath.resolve(file.getOriginalFilename());
-         Files.write(filePath, bytes);
-         Path absolutePath = filePath.toAbsolutePath();
-         absolutePathString = absolutePath.toString();
+         absolutePathString = fc.setAbsolutePath();
          String origin_absolutePathString = new String(absolutePathString);
          logger.debug("AbsolutePathString received" + absolutePathString);
+         
          File extractedAudio = null;
-         Path extractedAbsolutePath = directoryPath.toAbsolutePath();
-         String extractedAbsolutePathString = new String(absolutePathString);
-         /* ffmpeg */
-         if (file_size > 26214400) {
-            if (osName.toLowerCase().contains("windows")) {
-               extractedAbsolutePathString = extractedAbsolutePath.toString() + "\\" + nameWithoutExtension + ".mp3";
-
-            } else {
-               extractedAbsolutePathString = extractedAbsolutePath.toString() + "/" + nameWithoutExtension + ".mp3";
-
-            }
-
-            String ffmpegCommand = ffmpeg_address + " -i " + absolutePathString + " -vn -acodec libmp3lame "
-                  + extractedAbsolutePathString;
-            logger.debug("ffmpegCommand: " + ffmpegCommand);
-            //String whisperCommand = whisper_addr +" "+absolutePathString;
-            //logger.debug("whisperCommand: " + whisperCommand);
-            
-            
-            ProcessBuilder processBuilder = new ProcessBuilder();
-
-            if (osName.toLowerCase().contains("windows")) {
-               String[] cmdArray = ffmpegCommand.split(" ");
-               processBuilder.command(cmdArray);
-            } else if (osName.toLowerCase().contains("mac")) {
-               processBuilder.command("bash", "-c", ffmpegCommand);
-               
-            }
-
-            logger.debug("processBuilder.start()");
-            Process process = processBuilder.start();
-
-            Thread outputThread = new Thread(() -> {
-               try {
-                  InputStream inputStream = process.getInputStream();
-                  InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                  BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-
-                  String line;
-                  while ((line = bufferedReader.readLine()) != null) {
-                     System.out.println(line);
-                  }
-               } catch (IOException e) {
-                  e.printStackTrace();
-               }
-            });
-
-            Thread errorThread = new Thread(() -> {
-               try {
-                  InputStream errorStream = process.getErrorStream();
-                  InputStreamReader errorStreamReader = new InputStreamReader(errorStream);
-                  BufferedReader errorBufferedReader = new BufferedReader(errorStreamReader);
-
-                  String line;
-                  while ((line = errorBufferedReader.readLine()) != null) {
-                     System.err.println(line);
-                  }
-               } catch (IOException e) {
-                  e.printStackTrace();
-               }
-            });
-
-            outputThread.start();
-            errorThread.start();
-
-            int exitCode;
-            try {
-               exitCode = process.waitFor();
-            } catch (InterruptedException e) {
-               e.printStackTrace();
-               exitCode = -1;
-            }
-
-            outputThread.join();
-            errorThread.join();
-            logger.debug("Extract process exited with code: " + exitCode);
-
-            extractedAudio = new File(extractedAbsolutePathString);
-
-            absolutePathString = extractedAbsolutePathString;//삭제할 파
-            logger.debug("Extracted audio file size: " + extractedAudio.length() + " bytes");
-            file_size = extractedAudio.length();
-            if (extractedAudio.length() > 26214400) {
-               return new ResponseEntity<>("오디오만 추출했음에도 파일의 크기가 26214400bytes를 초과합니다. 파일을 분할하여 주세요.", headers,
-                     HttpStatus.OK);
-            }
+         extractedAudio = fc.runFfmpeg(extractedAudio);
+         if (extractedAudio != null && extractedAudio.length() > 26214400) {
+        	 return new ResponseEntity<>("오디오만 추출했음에도 파일의 크기가 26214400bytes를 초과합니다. 파일을 분할하여 주세요.", headers,
+					HttpStatus.OK);
          }
          
-           if (osName.toLowerCase().contains("mac")) {
+         
+           if (osd.getOsName().toLowerCase().contains("mac")) {
               //python 위치
                ProcessBuilder pyProcessBuilder = new ProcessBuilder();
                pyProcessBuilder.command("bash", "-c", "which python3");
