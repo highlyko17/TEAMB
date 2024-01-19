@@ -164,18 +164,84 @@ public class TimestampController {
          
          
          if (osName.toLowerCase().contains("windows")) {//win
+        	 //python 위치 찾기 
+        	 StringBuilder pythonPath = new StringBuilder();
+        	 try {
+ 	            // PowerShell 명령어
+ 	            String powerShellCommand = "Get-Command python | Select-Object -ExpandProperty Source";
+ 	            
+ 	            // PowerShell 프로세스 실행
+ 	            ProcessBuilder processBuilder = new ProcessBuilder("powershell.exe", "-Command", powerShellCommand);
+ 	            Process process = processBuilder.start();
+ 	            
+ 	            Thread outputThread = new Thread(() -> {
+ 	                try {
+ 	                   InputStream inputStream = process.getInputStream();
+ 	                   InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+ 	                   BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+ 	                   
+ 	                   
+ 	                   String line;
+ 	                   while ((line = bufferedReader.readLine()) != null) {
+ 	                      System.out.println(line);
+ 	                      pythonPath.append(line.trim());
+ 	                   }
+ 	                } catch (IOException e) {
+ 	                   e.printStackTrace();
+ 	                }
+ 	             });
+ 	            Thread errorThread = new Thread(() -> {
+ 	                try {
+ 	                   InputStream errorStream = process.getErrorStream();
+ 	                   InputStreamReader errorStreamReader = new InputStreamReader(errorStream);
+ 	                   BufferedReader errorBufferedReader = new BufferedReader(errorStreamReader);
+
+ 	                   String line;
+ 	                   while ((line = errorBufferedReader.readLine()) != null) {
+ 	                      System.err.println(line);
+ 	                   }
+ 	                } catch (IOException e) {
+ 	                   e.printStackTrace();
+ 	                }
+ 	             });
+
+ 	            // 프로세스 종료 대기
+ 	            outputThread.start();
+ 	            errorThread.start();
+
+ 	            int exitCode;
+ 	            try {
+ 	               exitCode = process.waitFor();
+ 	            } catch (InterruptedException e) {
+ 	               e.printStackTrace();
+ 	               exitCode = -1;
+ 	            }
+
+ 	            outputThread.join();
+ 	            errorThread.join();
+
+ 	            // Python 경로 출력
+ 	            logger.debug("Python 위치: " + pythonPath.toString());
+ 	            logger.debug("Finding python location process exited with code: " + exitCode);
+
+
+ 	           
+
+ 	        } catch (IOException | InterruptedException e) {
+ 	            e.printStackTrace();
+ 	        }
             if(lang==null) {
                String whispEnVarDir =projectPath+"resources\\win\\whisper\\";
                String ffmpegEnVarDir =projectPath+"resources\\win\\ffmpeg-master-latest-win64-gpl\\bin\\";
 
-               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --model tiny '"+absolutePathString+"'\"";
+               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+pythonPath+"' '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --model tiny '"+absolutePathString+"'\"";
          
             }
             else {
                String whispEnVarDir =projectPath+"resources\\win\\whisper\\";
                String ffmpegEnVarDir =projectPath+"resources\\win\\ffmpeg-master-latest-win64-gpl\\bin\\";
 
-               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --language "+lang+" --model tiny '"+absolutePathString+"'\"";
+               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+pythonPath+"' '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --language "+lang+" --model tiny '"+absolutePathString+"'\"";
          
             }
                          
@@ -283,7 +349,14 @@ public class TimestampController {
          whisperOutputThread.join();
          whisperErrorThread.join();
          logger.debug("Whisper process exited with code: " + exitCode);
-         String srt_address = srt_dir_address+"/"+nameWithoutExtension+".srt";
+         
+         String srt_address;
+         if (osName.toLowerCase().contains("windows")) {
+        	 srt_address = srt_dir_address+"\\"+nameWithoutExtension+".srt";
+         }
+         else {
+        	 srt_address = srt_dir_address+"/"+nameWithoutExtension+".srt";
+         }
          logger.debug("srt file address: " + srt_address);
          Path srt_path = Paths.get(srt_address);// 삭제할 파
            byte[] srt_fileBytes = Files.readAllBytes(srt_path);
