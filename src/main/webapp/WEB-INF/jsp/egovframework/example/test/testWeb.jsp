@@ -74,7 +74,7 @@
 </head>
 <body>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" id="uploadForm">
     <h3>whisper model</h3>
     <fieldset>
         <legend>파일 업로드</legend>

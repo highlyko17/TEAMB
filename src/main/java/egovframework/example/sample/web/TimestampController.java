@@ -503,8 +503,11 @@ public class TimestampController {
          
          
          List<ChatMessage> message = new ArrayList<ChatMessage>();
+//         message.add(new ChatMessage("user",
+//               "다음은 srt내용이야. "+searchfor+"가 시작되는 timestamp를 반환해줘. " + srt_content));
          message.add(new ChatMessage("user",
-               "다음은 srt내용이야. "+searchfor+"가 시작되는 timestamp를 반환해줘. " + srt_content));
+                 "These are the content of srt file which is extraced from an audio file." + srt_content + "From the srt content, find timestamp related to " + searchfor + " and return the timestamp."));
+
 
          ChatCompletionRequest completionRequest = ChatCompletionRequest.builder().messages(message)
                .model("gpt-3.5-turbo-16k")
