@@ -146,18 +146,18 @@ public class FileController {
 			Path extractedAbsolutePath = directoryPath.toAbsolutePath();
 			String extractedAbsolutePathString = "";
 			if (osd.getFfmpeg_address().toLowerCase().contains("windows")) {
-				extractedAbsolutePathString = extractedAbsolutePath.toString() + "\\" + nameWithoutExtension + ".mp3";
+				extractedAbsolutePathString = 
+						extractedAbsolutePath.toString() + "\\" + nameWithoutExtension + ".mp3";
 
 			} else {
 				extractedAbsolutePathString = extractedAbsolutePath.toString() + "/" + nameWithoutExtension + ".mp3";
 
 			}
 
-			String ffmpegCommand = osd.getFfmpeg_address() + " -i " + absolutePathString + " -vn -acodec libmp3lame "
-					+ extractedAbsolutePathString;
+			String ffmpegCommand = "\""+osd.getFfmpeg_address() + "\""+" -i " + "\""+absolutePathString +"\""+ " -vn -acodec libmp3lame "
+					+ "\""+extractedAbsolutePathString+"\"";
 			logger.debug("ffmpegCommand: " + ffmpegCommand);
-			String whisperCommand = osd.getWhisper_addr() +" "+ absolutePathString;
-			logger.debug("whisperCommand: " + whisperCommand);
+			
 			
 			
 			ProcessBuilder processBuilder = new ProcessBuilder();

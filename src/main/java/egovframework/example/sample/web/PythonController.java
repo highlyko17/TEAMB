@@ -193,36 +193,56 @@ public class PythonController {
               
               whisperCommand = 
                     "export PATH="+
+                    	  "\""+
                           osd.getFfmpeg_dir_addr()+
+                          "\""+
                           ":"+
+                          "\""+
                           whispEnVarDir+
+                          "\""+
                           ":$PATH;"+
+                          "\""+
                           osd.getWhisper_addr()+
+                          "\""+
                           " "+
                           "--output_dir "+
+                          "\""+
                           osd.getSrt_dir_address()+
+                          "\""+
                           " "+
                           "--output_format srt "+
                           "--model tiny "+
-                          absolutePathString;
+                          "\""+
+                          absolutePathString+
+                          "\"";
            }
            else {
               whisperCommand = 
                     "export PATH="+
-                    		osd.getFfmpeg_dir_addr()+
+                    	  "\""+
+                    	  osd.getFfmpeg_dir_addr()+
+                    	  "\""+
                           ":"+
+                          "\""+
                           whispEnVarDir+
+                          "\""+
                           ":$PATH;"+
+                          "\""+
                           osd.getWhisper_addr()+
+                          "\""+
                           " "+
                           "--output_dir "+
+                          "\""+
                           osd.getSrt_dir_address()+
+                          "\""+
                           " "+
                           "--output_format srt "+
                           "--language "+
                           lang+" "+
                           "--model tiny "+
-                          absolutePathString;
+                          "\""+
+                          absolutePathString+
+                          "\"";
            }
 	}
 }

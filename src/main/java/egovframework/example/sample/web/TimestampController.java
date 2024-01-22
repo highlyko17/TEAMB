@@ -91,7 +91,7 @@ public class TimestampController {
 
          absolutePathString = fc.setAbsolutePath();
          String origin_absolutePathString = new String(absolutePathString);
-         logger.debug("AbsolutePathString received" + absolutePathString);
+         logger.debug("AbsolutePathString received: " + absolutePathString);
          
          File extractedAudio = null;
          extractedAudio = fc.runFfmpeg(extractedAudio);
