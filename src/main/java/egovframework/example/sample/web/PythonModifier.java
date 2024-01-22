@@ -11,7 +11,7 @@ import java.io.PrintWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class PythonController {
+public class PythonModifier {
 	private static final Logger logger = LogManager.getLogger(EgovSampleController.class);
 	private OSDetect osd;
 	private String locOfPython;
@@ -27,7 +27,7 @@ public class PythonController {
 		this.whisperCommand = whisperCommand;
 	}
 
-	PythonController(OSDetect osd, String locOfPython, String lang, String absolutePathString) throws IOException, InterruptedException{
+	PythonModifier(OSDetect osd, String locOfPython, String lang, String absolutePathString) throws IOException, InterruptedException{
 		this.osd = osd;
 		this.locOfPython = locOfPython;
 		this.lang = lang;
