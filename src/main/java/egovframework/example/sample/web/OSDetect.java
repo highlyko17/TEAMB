@@ -12,6 +12,15 @@ public class OSDetect {
 	private String whisper_addr;
 	private String projectPath;
 	private String srt_dir_address;
+	private String resource_address;
+	
+	public String getSrt_dir_address() {
+		return srt_dir_address;
+	}
+
+	public void setSrt_dir_address(String srt_dir_address) {
+		this.srt_dir_address = srt_dir_address;
+	}
 	
 	public String getProjectPath() {
 		return projectPath;
@@ -53,25 +62,36 @@ public class OSDetect {
 		this.whisper_addr = whisper_addr;
 	}
 	
+	public String getResource_address() {
+		return resource_address;
+	}
+
+	public void setResource_address(String resource_address) {
+		this.resource_address = resource_address;
+	}
+	
 	public OSDetect(String projectPath){
 		this.osName = System.getProperty("os.name");
 		ffmpeg_address = "";
 		ffmpeg_dir_addr = "";
 		whisper_addr = "";
+		srt_dir_address = "";
+		resource_address ="";
 		this.projectPath = projectPath;
 	}
-	
+
 	public void detection() {
 		if (osName.toLowerCase().contains("windows")) {
 			logger.debug("OS detection: Windows OS");
 			ffmpeg_address = projectPath + "resources\\win\\ffmpeg.exe";
 			ffmpeg_dir_addr =projectPath + "resources\\win";
-
+			resource_address = projectPath + "resources";
 		} else if (osName.toLowerCase().contains("mac")) {
 			logger.debug("OS detection: Mac OS");
 			ffmpeg_address = projectPath + "resources/mac/ffmpeg";
 			ffmpeg_dir_addr =projectPath + "resources/mac";
 			whisper_addr = projectPath + "resources/mac/whisper/bin/whisper";
+			resource_address = projectPath + "resources";
 		} else {
 			logger.debug("OS detection: Unknown OS");
 		}
@@ -86,6 +106,7 @@ public class OSDetect {
             ffmpeg_dir_addr =projectPath + "resources\\win";
             whisper_addr = projectPath + "resources\\win\\whisper\\bin\\whisper.exe";
             srt_dir_address = projectPath + "resources\\temp";
+            resource_address = projectPath + "resources";
             
          } else if (osName.toLowerCase().contains("mac")) { 
             logger.debug("OS detection: Mac OS");
@@ -93,6 +114,7 @@ public class OSDetect {
             ffmpeg_dir_addr =projectPath + "resources/mac";
             whisper_addr = projectPath + "resources/mac/whisper/bin/whisper";
             srt_dir_address = projectPath + "resources/temp";
+            resource_address = projectPath + "resources";
          } else {
             logger.debug("OS detection: Unknown OS");
          }

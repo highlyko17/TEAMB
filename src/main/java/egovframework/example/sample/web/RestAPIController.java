@@ -65,6 +65,44 @@ public class RestAPIController {
 
 		return null;
 	}
+	
+	@PostMapping("/install-guide.do")
+	@ResponseBody
+	public ResponseEntity<?> installGuide(HttpServletRequest request) throws IOException, InterruptedException {
+
+		long startTime = System.currentTimeMillis();
+		HttpHeaders headers = new HttpHeaders();
+
+		headers.add(HttpHeaders.CONTENT_TYPE, "text/plain;charset=UTF-8");
+
+		Map<String, String> response = new HashMap<>();// 결과를 맵핑할 변
+		ObjectMapper objectMapper = new ObjectMapper();
+		
+		ServletContext context = request.getSession().getServletContext();
+        String projectPath = context.getRealPath("/");
+
+		OSDetect osd = new OSDetect(projectPath);
+        osd.whisperDetection();
+        
+        Path resource_path = Paths.get(osd.getResource_address());
+        if (!Files.exists(resource_path)) {
+            logger.error("resource 폴더가 존재하지 않습니다. resource 폴더를 다운받아 주세요.");
+            logger.error("resource 폴더를 둘 곳: "+ osd.getResource_address());
+            
+            response.put("Install the 'resource' folder at the following address: ", osd.getResource_address());
+            //ObjectMapper objectMapper = new ObjectMapper();
+            String jsonResponse = objectMapper.writeValueAsString(response);
+            return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
+        }
+
+		long endTime = System.currentTimeMillis();
+		long executionTime = endTime - startTime;
+		response.put("executionTimeInMilli", Long.toString(executionTime));
+		logger.info("Execution time:" + executionTime);
+		String jsonResponse = objectMapper.writeValueAsString(response);
+
+		return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
+	}
 
 	@PostMapping("/post-test.do")
 	@ResponseBody

@@ -29,6 +29,22 @@ public class FileController {
 	private String nameWithoutExtension;
 	private File extractedAudio;
 	
+	public String getAbsolutePathString() {
+		return absolutePathString;
+	}
+
+	public void setAbsolutePathString(String absolutePathString) {
+		this.absolutePathString = absolutePathString;
+	}
+
+	public String getNameWithoutExtension() {
+		return nameWithoutExtension;
+	}
+
+	public void setNameWithoutExtension(String nameWithoutExtension) {
+		this.nameWithoutExtension = nameWithoutExtension;
+	}
+	
 	public Path getDirectoryPath() {
 		return directoryPath;
 	}

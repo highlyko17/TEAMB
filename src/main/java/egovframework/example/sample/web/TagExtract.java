@@ -57,6 +57,17 @@ public class TagExtract {
 		/* OS detection */
 		OSDetect osd = new OSDetect(projectPath);
 		osd.detection();
+		
+		Path resource_path = Paths.get(osd.getResource_address());
+        if (!Files.exists(resource_path)) {
+            logger.error("resource 폴더가 존재하지 않습니다. resource 폴더를 다운받아 주세요.");
+            logger.error("resource 폴더를 둘 곳: "+ osd.getResource_address());
+            
+            response.put("Install the 'resource' folder at the following address: ", osd.getResource_address());
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonResponse = objectMapper.writeValueAsString(response);
+            return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
+        }
 
 		FileController fc = new FileController(response, file, osd);
 		fc.exist();

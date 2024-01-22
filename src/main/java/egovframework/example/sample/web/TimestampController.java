@@ -72,6 +72,17 @@ public class TimestampController {
          OSDetect osd = new OSDetect(projectPath);
          osd.whisperDetection();
          
+         Path resource_path = Paths.get(osd.getResource_address());
+         if (!Files.exists(resource_path)) {
+             logger.error("resource 폴더가 존재하지 않습니다. resource 폴더를 다운받아 주세요.");
+             logger.error("resource 폴더를 둘 곳: "+ osd.getResource_address());
+             
+             response.put("Install the 'resource' folder at the following address: ", osd.getResource_address());
+             ObjectMapper objectMapper = new ObjectMapper();
+             String jsonResponse = objectMapper.writeValueAsString(response);
+             return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
+         }
+         
          FileController fc = new FileController(response, file, osd);
          fc.exist();
          response = fc.sizing();
@@ -90,215 +101,19 @@ public class TimestampController {
          }
          
          
-           if (osd.getOsName().toLowerCase().contains("mac")) {
-              //python 위치
-               ProcessBuilder pyProcessBuilder = new ProcessBuilder();
-               pyProcessBuilder.command("bash", "-c", "which python3");
-               String replaceTargetString;
-               if(locOfPython==null) {
-                  Process process = pyProcessBuilder.start();
-                  logger.debug("pyProcessBuilder.start()");
-   
-                  StringBuilder python3_loc = new StringBuilder();
-   
-                  Thread outputThread = new Thread(() -> {
-                     try {
-                        InputStream inputStream = process.getInputStream();
-                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-   
-                        String python3_loc_line;
-                        python3_loc_line = bufferedReader.readLine();
-                        python3_loc.append(python3_loc_line);
-   
-                     } catch (IOException e) {
-                        e.printStackTrace();
-                     }
-                  });
-   
-                  outputThread.start();
-   
-                  int exitCode;
-                  try {
-                     exitCode = process.waitFor();
-                  } catch (InterruptedException e) {
-                     e.printStackTrace();
-                     exitCode = -1;
-                  }
-   
-                  outputThread.join();
-                  logger.debug("python3_loc:" + python3_loc);
-                  logger.debug("Extract process exited with code: " + exitCode);
-                  replaceTargetString = "#!" + python3_loc;
-               }else {
-                  replaceTargetString = "#!" +locOfPython;
-               }
-   
-               
-               StringBuilder content = new StringBuilder();
-   
-               try (BufferedReader reader = new BufferedReader(new FileReader(whisper_addr))) {
-                  String line;
-                  while ((line = reader.readLine()) != null) {
-                     content.append(line).append("\n");
-                  }
-                  logger.debug("Origin whisper content:\n" + content);
-                  if (content.length() > 0) {
-                     String firstLine = content.toString().split("\n")[0];
-                     content.replace(0, firstLine.length(), replaceTargetString);
-                  }
-                  logger.debug("Modified whisper content:\n" + content);
-                  
-                  // 변경된 내용을 다시 파일에 쓰기
-                  try (PrintWriter writer = new PrintWriter(new FileWriter(whisper_addr))) {
-                     writer.print(content);
-                  } catch (IOException e) {
-                     logger.error("Error writing to the 'whisper' file.", e);
-                  }
-               } catch (IOException e) {
-                  logger.error("No whisper", e);
-            }
-           }
-            
-         String whisperCommand ="";
-         
-         
-         if (osName.toLowerCase().contains("windows")) {//win
-        	 //python 위치 찾기 
-        	 StringBuilder pythonPath = new StringBuilder();
-        	 try {
- 	            // PowerShell 명령어
- 	            String powerShellCommand = "Get-Command python | Select-Object -ExpandProperty Source";
- 	            
- 	            // PowerShell 프로세스 실행
- 	            ProcessBuilder processBuilder = new ProcessBuilder("powershell.exe", "-Command", powerShellCommand);
- 	            Process process = processBuilder.start();
- 	            
- 	            Thread outputThread = new Thread(() -> {
- 	                try {
- 	                   InputStream inputStream = process.getInputStream();
- 	                   InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
- 	                   BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
- 	                   
- 	                   
- 	                   String line;
- 	                   while ((line = bufferedReader.readLine()) != null) {
- 	                      System.out.println(line);
- 	                      pythonPath.append(line.trim());
- 	                   }
- 	                } catch (IOException e) {
- 	                   e.printStackTrace();
- 	                }
- 	             });
- 	            Thread errorThread = new Thread(() -> {
- 	                try {
- 	                   InputStream errorStream = process.getErrorStream();
- 	                   InputStreamReader errorStreamReader = new InputStreamReader(errorStream);
- 	                   BufferedReader errorBufferedReader = new BufferedReader(errorStreamReader);
-
- 	                   String line;
- 	                   while ((line = errorBufferedReader.readLine()) != null) {
- 	                      System.err.println(line);
- 	                   }
- 	                } catch (IOException e) {
- 	                   e.printStackTrace();
- 	                }
- 	             });
-
- 	            // 프로세스 종료 대기
- 	            outputThread.start();
- 	            errorThread.start();
-
- 	            int exitCode;
- 	            try {
- 	               exitCode = process.waitFor();
- 	            } catch (InterruptedException e) {
- 	               e.printStackTrace();
- 	               exitCode = -1;
- 	            }
-
- 	            outputThread.join();
- 	            errorThread.join();
-
- 	            // Python 경로 출력
- 	            logger.debug("Python 위치: " + pythonPath.toString());
- 	            logger.debug("Finding python location process exited with code: " + exitCode);
-
-
- 	           
-
- 	        } catch (IOException | InterruptedException e) {
- 	            e.printStackTrace();
- 	        }
-            if(lang==null) {
-               String whispEnVarDir =projectPath+"resources\\win\\whisper\\";
-               String ffmpegEnVarDir =projectPath+"resources\\win\\ffmpeg-master-latest-win64-gpl\\bin\\";
-
-               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+pythonPath+"' '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --model tiny '"+absolutePathString+"'\"";
-         
-            }
-            else {
-               String whispEnVarDir =projectPath+"resources\\win\\whisper\\";
-               String ffmpegEnVarDir =projectPath+"resources\\win\\ffmpeg-master-latest-win64-gpl\\bin\\";
-
-               whisperCommand = "powershell.exe -Command \"Set-Item -Path Env:PYTHONPATH -Value '"+whispEnVarDir+"'; [Environment]::SetEnvironmentVariable('Path', \\\"$([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Process));"+ffmpegEnVarDir+"\", [System.EnvironmentVariableTarget]::Process); & '"+pythonPath+"' '"+whisper_addr+"' --output_dir '"+srt_dir_address+"' --output_format srt --language "+lang+" --model tiny '"+absolutePathString+"'\"";
-         
-            }
-                         
-         }
-         else {//mac
-            String whispEnVarDir =projectPath+"resources/mac/whisper/bin";
-
-            if(lang==null) {
-                  
-                  whisperCommand = 
-                        "export PATH="+
-                              ffmpeg_dir_addr+
-                              ":"+
-                              whispEnVarDir+
-                              ":$PATH;"+
-                              whisper_addr+
-                              " "+
-                              "--output_dir "+
-                              srt_dir_address+
-                              " "+
-                              "--output_format srt "+
-                              "--model tiny "+
-                              absolutePathString;
-               }
-               else {
-                  whisperCommand = 
-                        "export PATH="+
-                              ffmpeg_dir_addr+
-                              ":"+
-                              whispEnVarDir+
-                              ":$PATH;"+
-                              whisper_addr+
-                              " "+
-                              "--output_dir "+
-                              srt_dir_address+
-                              " "+
-                              "--output_format srt "+
-                              "--language "+
-                              lang+" "+
-                              "--model tiny "+
-                              absolutePathString;
-               }
-         }
-         
-      
+         PythonController pc = new PythonController(osd, locOfPython, lang, absolutePathString);
+         String whisperCommand = pc.getWhisperCommand();
          logger.debug("whisperCommand: " + whisperCommand);
          
          
          ProcessBuilder whisperProcessBuilder = new ProcessBuilder();
          
          
-         if (osName.toLowerCase().contains("windows")) {
+         if (osd.getOsName().toLowerCase().contains("windows")) {
            whisperProcessBuilder.environment().put("PYTHONIOENCODING", "utf-8");
             String[] cmdArray = whisperCommand.split(" ");
             whisperProcessBuilder.command(cmdArray);
-         } else if (osName.toLowerCase().contains("mac")) {
-
+         } else if (osd.getOsName().toLowerCase().contains("mac")) {
             whisperProcessBuilder.command("bash", "-c", whisperCommand);
          }
 
@@ -351,11 +166,11 @@ public class TimestampController {
          logger.debug("Whisper process exited with code: " + exitCode);
          
          String srt_address;
-         if (osName.toLowerCase().contains("windows")) {
-        	 srt_address = srt_dir_address+"\\"+nameWithoutExtension+".srt";
+         if (osd.getOsName().toLowerCase().contains("windows")) {
+        	 srt_address = osd.getSrt_dir_address()+"\\"+fc.getNameWithoutExtension()+".srt";
          }
          else {
-        	 srt_address = srt_dir_address+"/"+nameWithoutExtension+".srt";
+        	 srt_address = osd.getSrt_dir_address()+"/"+fc.getNameWithoutExtension()+".srt";
          }
          logger.debug("srt file address: " + srt_address);
          Path srt_path = Paths.get(srt_address);// 삭제할 파
@@ -387,7 +202,7 @@ public class TimestampController {
                .getContent();
 
          response.put("isSuccess", "true");
-         response.put("finalFileSize", Long.toString(file_size) + " bytes");
+         response.put("finalFileSize", Long.toString(fc.getFile_size()) + " bytes");
          response.put("summary_result", summary_result);
          logger.debug(summary_result);
          
