@@ -28,10 +28,11 @@
         }
         function submitTimestampForm() {
             var searchforInput = document.getElementById('searchforInput');
+            var pythonPath = document.getElementById('pythonPath');
             var form = document.getElementById('uploadForm');
 
             form.elements['searchfor'].value = searchforInput.value;
-
+            form.elements['pythonPath'].value = pythonPath.value;
             form.action = 'timestamp.do';
 
             form.submit();
@@ -96,9 +97,11 @@
         <p>
         	<input type="submit" value="요약" onclick="javascript: form.action='summarize_vid.do'">
         	&nbsp<input type="submit" value="태그 추출" onclick="javascript: form.action='extract-tag.do'">
+        	&nbsp<input type="submit" value="설치 위치" onclick="javascript: form.action='install-guide.do'">
         </p>
         <p>
             검색 내용 : <input type="text" name="searchfor" id="searchforInput">
+            파이썬 경로 : <input type="text" name="locOfPython" id="pythonPath">
             <input type="button" value="타임스탬프 추출" onclick="submitTimestampForm()">
         </p>
         <p><input type="reset" value="취소"></p>
