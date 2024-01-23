@@ -245,4 +245,18 @@ public class FileController {
 			logger.debug("temporary file not found.");
 		}
 	}
+	
+	public void deleteSrtFile(String srt_address) {
+		File srtToDelete = new File(srt_address);
+        
+		if (srtToDelete.exists()) {
+           if (srtToDelete.delete()) {
+              logger.debug("srtToDelete deleted successfully.");
+           } else {
+              logger.debug("Failed to delete the srtToDelete.");
+           }
+        } else {
+           logger.debug("srtToDelete file not found.");
+        }
+	}
 }

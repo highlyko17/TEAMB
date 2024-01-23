@@ -106,137 +106,27 @@ public class TimestampController {
          String whisperCommand = pc.getWhisperCommand();
          logger.debug("whisperCommand: " + whisperCommand);
          
+         WhisperController wc = new WhisperController();
+         wc.startWhisperProcess(osd, pc);
          
-         ProcessBuilder whisperProcessBuilder = new ProcessBuilder();
-         
-         
-         if (osd.getOsName().toLowerCase().contains("windows")) {
-           whisperProcessBuilder.environment().put("PYTHONIOENCODING", "utf-8");
-            String[] cmdArray = whisperCommand.split(" ");
-            whisperProcessBuilder.command(cmdArray);
-         } else if (osd.getOsName().toLowerCase().contains("mac")) {
-            whisperProcessBuilder.command("bash", "-c", whisperCommand);
-         }
-
-         logger.debug("whisperProcessBuilder.start()");
-         Process whisperProcess = whisperProcessBuilder.start();
-
-         Thread whisperOutputThread = new Thread(() -> {
-            try {
-               InputStream inputStream = whisperProcess.getInputStream();
-               InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-               BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-
-               String line;
-               while ((line = bufferedReader.readLine()) != null) {
-                  System.out.println(line);
-               }
-            } catch (IOException e) {
-               e.printStackTrace();
-            }
-         });
-
-         Thread whisperErrorThread = new Thread(() -> {
-            try {
-               InputStream errorStream = whisperProcess.getErrorStream();
-               InputStreamReader errorStreamReader = new InputStreamReader(errorStream);
-               BufferedReader errorBufferedReader = new BufferedReader(errorStreamReader);
-
-               String line;
-               while ((line = errorBufferedReader.readLine()) != null) {
-                  System.err.println(line);
-               }
-            } catch (IOException e) {
-               e.printStackTrace();
-            }
-         });
-
-         whisperOutputThread.start();
-         whisperErrorThread.start();
-
-         int exitCode;
-         try {
-            exitCode = whisperProcess.waitFor();
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-            exitCode = -1;
-         }
-
-         whisperOutputThread.join();
-         whisperErrorThread.join();
-         logger.debug("Whisper process exited with code: " + exitCode);
-         
-         String srt_address;
-         if (osd.getOsName().toLowerCase().contains("windows")) {
-        	 srt_address = osd.getSrt_dir_address()+"\\"+fc.getNameWithoutExtension()+".srt";
-         }
-         else {
-        	 srt_address = osd.getSrt_dir_address()+"/"+fc.getNameWithoutExtension()+".srt";
-         }
-         logger.debug("srt file address: " + srt_address);
-         Path srt_path = Paths.get(srt_address);// 삭제할 파
-           byte[] srt_fileBytes = Files.readAllBytes(srt_path);
-           String srt_content = new String(srt_fileBytes);
-           logger.debug("srt_content:\n " + srt_content);
+         String srt_content = osd.makeSrt(osd, fc);
          //file_size = extractedAudio.length();
          
+         String summary_result = wc.getSrtResult(srt_content, searchfor);
          
          long endTime = System.currentTimeMillis();
          long executionTime = endTime - startTime;
-         response.put("executionTimeInMilli", Long.toString(executionTime));
          logger.info("Execution time:"+executionTime);
-         response.put("srt_conent", srt_content);
-         
-         
-         List<ChatMessage> message = new ArrayList<ChatMessage>();
-//         message.add(new ChatMessage("user",
-//               "다음은 srt내용이야. "+searchfor+"가 시작되는 timestamp를 반환해줘. " + srt_content));
-         message.add(new ChatMessage("user",
-                 "These are the content of srt file which is extraced from an audio file." + srt_content + "From the srt content, find timestamp related to " + searchfor + " and return the timestamp."));
-
-
-         ChatCompletionRequest completionRequest = ChatCompletionRequest.builder().messages(message)
-               .model("gpt-3.5-turbo-16k")
-
-               .maxTokens(700).temperature((double) 0.5f).build();
-               String summary_result = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage()
-               .getContent();
-
-         response.put("isSuccess", "true");
-         response.put("finalFileSize", Long.toString(fc.getFile_size()) + " bytes");
-         response.put("summary_result", summary_result);
          logger.debug(summary_result);
          
+         Result rslt = new Result();
+         response = rslt.getResult(response, fc.getFile_size(), summary_result, executionTime, srt_content);
 
          ObjectMapper objectMapper = new ObjectMapper();
          String jsonResponse = objectMapper.writeValueAsString(response);
 
-         File fileToDelete = new File(origin_absolutePathString);//사용자에게 받은 원본 파일
-
-         if (fileToDelete.exists()) {
-            if (fileToDelete.delete()) {
-               logger.debug("origin video file deleted successfully.");
-            } else {
-               logger.debug("Failed to delete the origin video file.");
-            }
-         } else {
-            logger.debug("temporary file not found.");
-         }
-         
-         if (extractedAudio != null) {//mp3 전환 
-            extractedAudio.delete();
-            logger.debug("Extracted audio file deleted successfully.");
-         }
-         File srtToDelete = new File(srt_address);
-         if (srtToDelete.exists()) {
-            if (srtToDelete.delete()) {
-               logger.debug("srtToDelete deleted successfully.");
-            } else {
-               logger.debug("Failed to delete the srtToDelete.");
-            }
-         } else {
-            logger.debug("srtToDelete file not found.");
-         }
+         fc.deleteFile(origin_absolutePathString);
+         fc.deleteSrtFile(osd.getSrt_address());
          
          return new ResponseEntity<>(jsonResponse, headers, HttpStatus.OK);
       }

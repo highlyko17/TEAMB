@@ -11,4 +11,14 @@ public class Result {
 		
 		return response;
 	}
+	
+	public Map<String, String> getResult(Map<String, String> response, long file_size, String result, long executionTime, String srt_content) {
+		response.put("isSuccess", "true");
+		response.put("finalFileSize", Long.toString(file_size) + " bytes");
+		response.put("result", result);
+		response.put("executionTimeInMilli", Long.toString(executionTime));
+		response.put("srt_conent", srt_content);
+		
+		return response;
+	}
 }

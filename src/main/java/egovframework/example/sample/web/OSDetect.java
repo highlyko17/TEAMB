@@ -1,5 +1,10 @@
 package egovframework.example.sample.web;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,6 +18,15 @@ public class OSDetect {
 	private String projectPath;
 	private String srt_dir_address;
 	private String resource_address;
+	private String srt_address;
+	
+	public String getSrt_address() {
+		return srt_address;
+	}
+
+	public void setSrt_address(String srt_address) {
+		this.srt_address = srt_address;
+	}
 	
 	public String getSrt_dir_address() {
 		return srt_dir_address;
@@ -120,5 +134,21 @@ public class OSDetect {
          }
 		
 		logger.debug("whisper_addr: " + whisper_addr);
+	}
+	
+	public String makeSrt(OSDetect osd, FileController fc) throws IOException {
+		if (osd.getOsName().toLowerCase().contains("windows")) {
+       	 srt_address = osd.getSrt_dir_address()+"\\"+fc.getNameWithoutExtension()+".srt";
+        }
+        else {
+       	 srt_address = osd.getSrt_dir_address()+"/"+fc.getNameWithoutExtension()+".srt";
+        }
+		logger.debug("srt file address: " + srt_address);
+        Path srt_path = Paths.get(srt_address);// 삭제할 파
+        byte[] srt_fileBytes = Files.readAllBytes(srt_path);
+        String srt_content = new String(srt_fileBytes);
+        logger.debug("srt_content:\n " + srt_content);
+        
+        return srt_content;
 	}
 }
