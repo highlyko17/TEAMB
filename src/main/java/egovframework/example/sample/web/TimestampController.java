@@ -63,7 +63,7 @@ public class TimestampController {
          String projectPath = context.getRealPath("/");
          String absolutePathString = "";
          logger.debug("searchfor: " + searchfor);
-         if (locOfPython.isEmpty()) {
+         if (locOfPython == null||locOfPython.isEmpty()) {
         	    logger.debug("emptylocOfPython" );
         	    locOfPython = null;
         	}
